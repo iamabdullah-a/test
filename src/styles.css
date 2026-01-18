@@ -1,0 +1,24 @@
+:root{
+  --accent: #00f2ff;
+  --bg: #050508;
+  --muted: rgba(255,255,255,0.85);
+}
+
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;color:var(--muted);-webkit-font-smoothing:antialiased}
+
+.overlay{
+  position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:9999;
+  background:linear-gradient(180deg, rgba(5,5,8,0.9), rgba(5,5,8,0.95));
+  padding:20px;
+}
+.overlay .box{max-width:420px;padding:20px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));backdrop-filter: blur(6px);text-align:center}
+.overlay h1{margin:0 0 8px 0;font-size:18px;color:var(--accent)}
+.overlay p{margin:0 0 12px 0;font-size:14px}
+.overlay .buttons{display:flex;gap:10px;justify-content:center;margin-top:12px}
+button{font-size:14px;padding:10px 14px;border-radius:10px;border:0;cursor:pointer}
+button.primary{background:linear-gradient(90deg,var(--accent),#90f7ff);color:#001}
+button.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
+
+.guide{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:72vw;max-width:380px;height:72vw;max-height:380px;border-radius:20px;border:2px dashed rgba(0,242,255,0.4);display:none;align-items:center;justify-content:center;z-index:900}
+.guide .guide-box{padding:12px 18px;background:rgba(0,0,0,0.5);border-radius:8px;color:var(--muted);font-size:14px}
