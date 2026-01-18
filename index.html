@@ -1,269 +1,145 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Enterprise AR Pro — Production (Fixed Fullscreen Camera)</title>
+  <title>Enterprise WebAR — MindAR + A-Frame</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
-  <!-- A-Frame + MindAR (pinned versions) -->
-  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-  <!-- Gesture handler (optional) -->
-  <script src="https://raw.githack.com/fcor/aframe-gesture-handler/master/dist/aframe-gesture-handler.js"></script>
+  <!-- Local A-Frame -->
+  <script src="./assets/aframe.min.js"></script>
+
+  <!-- Local MindAR (Image Tracking for A-Frame) -->
+  <script src="./assets/mindar-image-aframe.prod.js"></script>
 
   <style>
-    :root{
-      --accent: #00f2ff;
-      --bg: #050508;
-      --muted: rgba(255,255,255,0.85);
-    }
-    html,body{height:100%;margin:0;background:var(--bg);font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial;color:var(--muted);-webkit-font-smoothing:antialiased;overflow:hidden;}
-
-    /* Overlay UI (top-most) */
-    #overlay{
-      position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:10010;
-      background:linear-gradient(180deg, rgba(5,5,8,0.9), rgba(5,5,8,0.95));
-      padding:20px;
-    }
-    .box{max-width:420px;padding:20px;border-radius:12px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));text-align:center}
-    .box h1{margin:0 0 8px 0;font-size:18px;color:var(--accent)}
-    .buttons{display:flex;gap:10px;justify-content:center;margin-top:12px}
-    button{font-size:14px;padding:10px 14px;border-radius:10px;border:0;cursor:pointer}
-    button.primary{background:linear-gradient(90deg,var(--accent),#90f7ff);color:#001}
-    button.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
-
-    /* Guide (centered) - visible while searching */
-    .guide{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:72vw;max-width:380px;height:72vw;max-height:380px;border-radius:20px;border:2px dashed rgba(0,242,255,0.4);display:none;align-items:center;justify-content:center;z-index:10005;pointer-events:none}
-    .guide .guide-box{padding:12px 18px;background:rgba(0,0,0,0.45);border-radius:8px;color:var(--muted);font-size:14px}
-
-    /* IMPORTANT: ensure the A-Frame canvas and MindAR video are full-viewport and layered */
-    a-scene, canvas, video {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100vw;
-      height: 100vh;
+    html, body {
       margin: 0;
       padding: 0;
-      border: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
     }
-
-    /* MindAR creates a <video> element. we want it to cover and sit under WebGL canvas. */
-    video {
-      object-fit: cover;        /* crop to fill viewport while preserving aspect */
-      z-index: 1000;            /* behind canvas */
-      background: black;
+    #loading {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      color: #fff;
+      z-index: 10;
     }
-
-    /* Three / A-Frame canvas should be transparent and above the video */
-    canvas {
-      z-index: 1005;            /* above video, below overlays */
-      pointer-events: none;     /* allow touch events to pass to page/UI, unless you want interaction */
-      background: transparent !important;
+    #loading.hidden {
+      display: none;
     }
-
-    /* Ensure the A-Frame scene element itself is transparent */
-    a-scene {
-      background: transparent !important;
-    }
-
-    /* Hide overlay with a smooth fade when ready */
-    #overlay.hidden { opacity: 0; visibility: hidden; transition: opacity .45s ease, visibility .45s ease; pointer-events: none; }
   </style>
 </head>
+
 <body>
-  <!-- UI overlay (top) -->
-  <div id="overlay">
-    <div class="box">
-      <h1>Enterprise AR Pro</h1>
-      <p id="status">Ready — press <strong>Start AR</strong>.</p>
-      <div class="buttons">
-        <button id="startBtn" class="primary">Start AR</button>
-        <button id="previewBtn" class="secondary">Open Model Preview</button>
-      </div>
-      <small class="hint">Use Chrome/Edge on Android or Safari on iOS (HTTPS or local)</small>
-    </div>
-  </div>
+  <div id="loading">Loading AR…</div>
 
-  <div id="guide" class="guide" aria-hidden="true">
-    <div class="guide-box">Hold camera so the printed target fills the square</div>
-  </div>
-
-  <!-- A-Frame scene. renderer.alpha=true ensures transparent canvas. autoStart false so we control start -->
-  <a-scene 
-    id="ar-scene"
-    mindar-image="imageTargetSrc: ./assets/targets.mind; autoStart: false; uiLoading: no; uiError: no; uiScanning: no; maxTrack: 1"
-    embedded
-    renderer="alpha: true; antialias: true; physicallyCorrectLights: true; colorManagement: true"
+  <a-scene
     vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: false">
+    device-orientation-permission-ui="enabled: false"
+    embedded
+    renderer="
+      physicallyCorrectLights: true;
+      colorManagement: true;
+      toneMapping: ACESFilmic;
+      outputEncoding: sRGBEncoding;
+    "
+    mindar-image="
+      imageTargetSrc: ./targets.mind;
+      filterMinCF: 0.001;
+      filterBeta: 0.01;
+    "
+  >
+    <!-- Camera -->
+    <a-camera
+      position="0 0 0"
+      look-controls="enabled: false"
+    ></a-camera>
 
-    <a-assets>
-      <a-asset-item id="modelGLB" src="./assets/model.glb"></a-asset-item>
-    </a-assets>
+    <!-- Lighting -->
+    <a-entity light="type: ambient; intensity: 0.35"></a-entity>
 
-    <!-- Camera used by MindAR/A-Frame; keep look-controls disabled for marker flow -->
-    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+    <a-entity
+      light="type: directional; intensity: 1.1; castShadow: true"
+      position="1 3 2"
+    ></a-entity>
 
-    <a-entity id="targetEntity" mindar-image-target="targetIndex: 0">
-      <a-gltf-model id="gltfModel" src="#modelGLB" position="0 0 0" rotation="0 180 0" scale="0.8 0.8 0.8"
-        gesture-handler="minScale: 0.3; maxScale: 3" visible="false">
-      </a-gltf-model>
+    <!-- Image Target Anchor -->
+    <a-entity mindar-image-target="targetIndex: 0">
+      <!-- Smoothed World-Space Anchor -->
+      <a-entity id="anchor" pose-smoother>
+        <!-- Product Model -->
+        <a-entity
+          gltf-model="./model.glb"
+          position="0 0 0"
+          rotation="0 0 0"
+          scale="0.5 0.5 0.5"
+          shadow="cast: true; receive: false"
+        ></a-entity>
 
-      <a-entity light="type: ambient; intensity: 0.9"></a-entity>
-      <a-entity light="type: directional; intensity: 1.2" position="1 2 1"></a-entity>
+        <!-- Shadow Catcher -->
+        <a-plane
+          rotation="-90 0 0"
+          width="1.2"
+          height="1.2"
+          material="
+            shader: shadow;
+            opacity: 0.35;
+          "
+          shadow="receive: true"
+        ></a-plane>
+      </a-entity>
     </a-entity>
   </a-scene>
 
-  <script type="module">
-    // App JS — robust: ensure video & canvas styling & handle lifecycle events.
-    const startBtn = document.getElementById('startBtn');
-    const previewBtn = document.getElementById('previewBtn');
-    const overlay = document.getElementById('overlay');
-    const statusEl = document.getElementById('status');
-    const guideEl = document.getElementById('guide');
+  <script>
+    AFRAME.registerComponent('pose-smoother', {
+      schema: {
+        positionLerp: { default: 0.15 },
+        rotationLerp: { default: 0.2 }
+      },
 
-    const scene = document.querySelector('a-scene');
-    const targetEntity = document.getElementById('targetEntity');
-    const gltfModel = document.getElementById('gltfModel');
+      init() {
+        this.visible = false;
+        this.targetPosition = new THREE.Vector3();
+        this.targetQuaternion = new THREE.Quaternion();
 
-    let arReady = false;
-    let modelReady = false;
-    let arStarted = false;
+        this.el.object3D.visible = false;
 
-    function logStatus(txt) {
-      statusEl.textContent = txt;
-      console.log('[EnterpriseAR]', txt);
-    }
+        this.el.addEventListener('targetFound', () => {
+          this.visible = true;
+          this.el.object3D.visible = true;
+        });
 
-    async function warmCameraPermission() {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
-      try {
-        const s = await navigator.mediaDevices.getUserMedia({ video: true });
-        s.getTracks().forEach(t => t.stop());
-        console.log('Camera permission warmed');
-      } catch (e) {
-        console.warn('warmCameraPermission failed:', e);
-      }
-    }
+        this.el.addEventListener('targetLost', () => {
+          this.visible = false;
+        });
+      },
 
-    // When AR engine signals ready, we ensure video and canvas are properly styled and visible
-    function styleVideoAndCanvas() {
-      // Find the first video element created by MindAR (MindAR inserts a <video>)
-      const vid = document.querySelector('video');
-      if (vid) {
-        // Apply robust styles (these are also in CSS but we set them to be safe)
-        vid.style.position = 'fixed';
-        vid.style.top = '0';
-        vid.style.left = '0';
-        vid.style.width = '100vw';
-        vid.style.height = '100vh';
-        vid.style.objectFit = 'cover';
-        vid.style.zIndex = '1000';
-        vid.playsInline = true;
-        vid.setAttribute('playsinline', '');
-      } else {
-        console.warn('No video element found — camera may not be available yet.');
-      }
+      tick() {
+        if (!this.visible) return;
 
-      // Ensure A-Frame/Three canvas is above the video
-      const canvas = document.querySelector('canvas');
-      if (canvas) {
-        canvas.style.position = 'fixed';
-        canvas.style.top = '0';
-        canvas.style.left = '0';
-        canvas.style.width = '100vw';
-        canvas.style.height = '100vh';
-        canvas.style.zIndex = '1005';
-        canvas.style.pointerEvents = 'none'; // if you want touch gestures on model, change this
-        canvas.style.background = 'transparent';
-      } else {
-        console.warn('No canvas found yet.');
-      }
-    }
+        const obj = this.el.object3D;
+        obj.getWorldPosition(this.targetPosition);
+        obj.getWorldQuaternion(this.targetQuaternion);
 
-    async function startAR() {
-      if (arStarted) return;
-      arStarted = true;
-      logStatus('Starting AR engine — initializing camera...');
-      const arSystem = scene.systems['mindar-image-system'];
-      if (!arSystem) {
-        logStatus('Error: MindAR system not available.');
-        return;
-      }
-
-      try {
-        // Start MindAR (this creates the video element and boots camera)
-        await arSystem.start();
-        // style immediately in case elements are already inserted
-        styleVideoAndCanvas();
-        // Give MindAR a tick to fully initialize renderer/video then hide overlay
-        setTimeout(() => {
-          overlay.classList.add('hidden');
-          guideEl.style.display = 'flex';
-        }, 300);
-      } catch (err) {
-        console.error('arSystem.start() failed', err);
-        logStatus('AR start failed. Is camera permission granted?');
-        alert('AR failed to start. Check camera permission and that the page is served over HTTPS (or use a local server).');
-      }
-    }
-
-    // Listen for MindAR lifecycle events (A-Frame wrapper emits these)
-    scene.addEventListener('arReady', () => {
-      arReady = true;
-      logStatus('AR engine ready.');
-      styleVideoAndCanvas();
-    });
-
-    scene.addEventListener('arError', (ev) => {
-      console.error('MindAR arError', ev);
-      logStatus('AR engine error — camera unavailable or permission denied.');
-      alert('AR failed to start. Ensure camera permission is allowed and this page is served over HTTPS (or use local server).');
-    });
-
-    // model-loaded event from a-gltf-model
-    gltfModel.addEventListener('model-loaded', () => {
-      modelReady = true;
-      console.log('Model loaded');
-      if (arReady && modelReady) {
-        // hide overlay safely
-        overlay.classList.add('hidden');
-        guideEl.style.display = 'flex';
-        logStatus('AR ready — point camera at the image target.');
+        obj.position.lerp(this.targetPosition, this.data.positionLerp);
+        obj.quaternion.slerp(this.targetQuaternion, this.data.rotationLerp);
       }
     });
 
-    // Toggle model visibility when target found / lost
-    targetEntity.addEventListener('targetFound', () => {
-      gltfModel.setAttribute('visible', 'true');
-      guideEl.style.display = 'none';
-    });
-    targetEntity.addEventListener('targetLost', () => {
-      gltfModel.setAttribute('visible', 'false');
-      guideEl.style.display = 'flex';
-    });
+    const sceneEl = document.querySelector('a-scene');
+    const loadingEl = document.getElementById('loading');
 
-    // Button handlers
-    startBtn.addEventListener('click', async () => {
-      startBtn.disabled = true;
-      logStatus('Requesting camera access (user gesture) ...');
-      await warmCameraPermission();
-      await startAR();
-    });
-
-    previewBtn.addEventListener('click', () => {
-      window.open('preview.html', '_blank');
-    });
-
-    // If AR doesn't boot after N seconds, show friendly hint
-    window.addEventListener('load', () => {
-      setTimeout(() => {
-        if (!arReady) {
-          logStatus('Waiting for camera — if nothing happens, enable camera permission and reload.');
-        }
-      }, 8000);
+    sceneEl.addEventListener('loaded', () => {
+      loadingEl.classList.add('hidden');
     });
   </script>
 </body>
 </html>
-
