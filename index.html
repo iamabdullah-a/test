@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Enterprise AR Pro — Production</title>
+  <meta name="description" content="Production-ready MindAR + A-Frame image-tracking AR experience." />
+  <link rel="stylesheet" href="src/styles.css" />
+  <!-- A-Frame + MindAR (pinned versions) -->
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <!-- Gesture handler -->
+  <script src="https://raw.githack.com/fcor/aframe-gesture-handler/master/dist/aframe-gesture-handler.js"></script>
+</head>
+<body>
+  <!-- UI -->
+  <div id="overlay" class="overlay">
+    <div class="box">
+      <h1>Enterprise AR Pro</h1>
+      <p id="status">Ready — press <strong>Start AR</strong>.</p>
+      <div class="buttons">
+        <button id="startBtn" class="primary">Start AR</button>
+        <button id="previewBtn" class="secondary">Open Model Preview</button>
+      </div>
+      <small class="hint">Use Chrome/Edge on Android or Safari on iOS (HTTPS or local)</small>
+    </div>
+  </div>
+
+  <div id="guide" class="guide" aria-hidden="true">
+    <div class="guide-box">Hold camera so the printed target fills the square</div>
+  </div>
+
+  <!-- A-Frame scene (autoStart: false — controlled programmatically) -->
+  <a-scene 
+    id="ar-scene"
+    mindar-image="imageTargetSrc: ./assets/targets.mind; autoStart: false; uiLoading: no; uiError: no; uiScanning: no; maxTrack: 1"
+    embedded
+    color-space="sRGB"
+    renderer="colorManagement: true, physicallyCorrectLights: true"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false">
+
+    <a-assets>
+      <a-asset-item id="modelGLB" src="./assets/model.glb"></a-asset-item>
+    </a-assets>
+
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+    <a-entity id="targetEntity" mindar-image-target="targetIndex: 0">
+      <!-- The GLTF model -->
+      <a-gltf-model id="gltfModel" src="#modelGLB" position="0 0 0" rotation="0 180 0" scale="0.8 0.8 0.8"
+        gesture-handler="minScale: 0.3; maxScale: 3" visible="false">
+      </a-gltf-model>
+
+      <!-- Lighting tuned for mobile -->
+      <a-entity light="type: ambient; intensity: 0.9"></a-entity>
+      <a-entity light="type: directional; intensity: 1.2" position="1 2 1"></a-entity>
+    </a-entity>
+  </a-scene>
+
+  <script type="module" src="src/app.js"></script>
+</body>
+</html>
